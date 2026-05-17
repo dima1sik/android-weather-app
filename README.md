@@ -1,4 +1,4 @@
-﻿# Android Weather App
+﻿# WeatherNow Android
 
 Portfolio-ready university project.
 
@@ -18,3 +18,4 @@ To be updated after project review.
 ## Status
 
 Work in progress: cleanup, English UI translation, README, and screenshots.
+
