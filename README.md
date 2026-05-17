@@ -1,4 +1,4 @@
-# WeatherNow Android
+﻿# WeatherNow Android
 
 WeatherNow Android is a mobile weather application built with Kotlin, Jetpack Compose, and Retrofit.
 
@@ -42,10 +42,7 @@ settings.gradle.kts
 4. Wait for Gradle Sync to finish.
 5. Run the app on an emulator or physical Android device.
 
-## Status
-
-Portfolio / university Android project.
-
 ## Notes
 
 API keys should be stored locally and should not be committed to the repository.
+
