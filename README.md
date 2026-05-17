@@ -36,6 +36,3 @@ The app allows users to search for weather information by location and displays 
 4. Wait for Gradle Sync.
 5. Run the app on an emulator or Android device.
 
-## Status
-
-Finished university Android project prepared for GitHub portfolio.
