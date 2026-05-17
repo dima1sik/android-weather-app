@@ -1,10 +1,10 @@
-﻿# WeatherNow Android
+# WeatherNow Android
 
-WeatherNow Android is a weather application built with Kotlin, Jetpack Compose, and Retrofit.
+WeatherNow Android is a mobile weather application built with Kotlin, Jetpack Compose, and Retrofit.
 
 ## Overview
 
-The app allows users to search for weather information by location and displays current weather data in a clean mobile interface.
+The app allows users to search for weather information by location and view current weather data in a clean Android interface.
 
 ## Features
 
@@ -25,14 +25,27 @@ The app allows users to search for weather information by location and displays 
 - ViewModel
 - Gradle Kotlin DSL
 
+## Project Structure
+
+`	ext
+app/
+gradle/
+build.gradle.kts
+settings.gradle.kts
+`
+
 ## How to Run
 
 1. Open the project in Android Studio.
 2. Create or update local.properties.
-3. Add your API key:
+3. Add your weather API key: WEATHER_API_KEY=your_api_key_here.
+4. Wait for Gradle Sync to finish.
+5. Run the app on an emulator or physical Android device.
 
-   WEATHER_API_KEY=your_api_key_here
+## Status
 
-4. Wait for Gradle Sync.
-5. Run the app on an emulator or Android device.
+Portfolio / university Android project.
 
+## Notes
+
+API keys should be stored locally and should not be committed to the repository.
