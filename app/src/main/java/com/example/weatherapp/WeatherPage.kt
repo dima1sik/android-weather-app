@@ -1,188 +1,180 @@
 package com.example.weatherapp
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.example.weatherapp.api.Hour
 import com.example.weatherapp.api.NetworkResponse
 import com.example.weatherapp.api.WeatherModel
 
 @Composable
 fun WeatherPage(viewModel: WeatherViewModel, modifier: Modifier = Modifier) {
-    var city by remember { mutableStateOf("") }
-    val weatherResult by viewModel.weatherResult.collectAsState()
+    var city by rememberSaveable { mutableStateOf("") }
+    val weatherResult by viewModel.weatherResult.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val search = {
+        if (city.isNotBlank()) {
+            viewModel.getData(city)
+            keyboardController?.hide()
+        }
+    }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
                 modifier = Modifier.weight(1f),
                 value = city,
                 onValueChange = { city = it },
-                label = { Text(text = "Search for any location") }
+                label = { Text("Search for a location") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { search() })
             )
-            IconButton(onClick = {
-                viewModel.getData(city)
-                keyboardController?.hide()
-            }) {
-                Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+            IconButton(onClick = search, enabled = city.isNotBlank()) {
+                Icon(Icons.Default.Search, contentDescription = "Search")
             }
         }
+        Spacer(Modifier.height(16.dp))
 
         when (val result = weatherResult) {
             is NetworkResponse.Error -> {
-                Text(text = result.message, color = Color.Red)
+                Text(result.message, color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = viewModel::retry) { Text("Retry") }
             }
-            NetworkResponse.Loading -> {
-                CircularProgressIndicator()
-            }
-            is NetworkResponse.Success -> {
-                WeatherDetails(data = result.data)
-            }
+            NetworkResponse.Loading -> CircularProgressIndicator()
+            is NetworkResponse.Success -> WeatherDetails(result.data, Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-fun WeatherDetails(data: WeatherModel) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+fun WeatherDetails(data: WeatherModel, modifier: Modifier = Modifier) {
+    val current = data.current
+    val location = data.location
+    val forecast = data.forecast?.days?.firstOrNull { it != null }
+    val hours = forecast?.hours.orEmpty().filterNotNull()
+
+    LazyColumn(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // NagÅ‚Ã³wek: Data i Lokalizacja
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(text = "Today, ${data.location.localtime.split(" ")[0]}", color = Color.Gray, fontSize = 14.sp)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-                Text(
-                    text = "${data.location.name}, ${data.location.region}, ${data.location.country}",
-                    fontSize = 16.sp,
-                    color = Color.DarkGray,
-                    maxLines = 1
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // GÅ‚Ã³wna karta z pogodÄ…
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AsyncImage(
-                        model = "https:${data.current.condition.icon}".replace("64x64", "128x128"),
-                        contentDescription = null,
-                        modifier = Modifier.size(100.dp)
+        item {
+            Column {
+                location?.localtime?.substringBefore(' ')?.takeIf { it.isNotBlank() }?.let {
+                    Text("Today, $it", style = MaterialTheme.typography.bodySmall)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null)
+                    Text(
+                        listOfNotNull(location?.name, location?.region, location?.country)
+                            .filter { it.isNotBlank() }.joinToString(", "),
+                        style = MaterialTheme.typography.titleMedium
                     )
-                    Text(text = "${data.current.temp_c}°C", fontSize = 60.sp, fontWeight = FontWeight.Medium)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Statystyki: Wind, Humidity, Chance of rain
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    WeatherStatItem("Wind", "${data.current.wind_kph} km/h", "https://cdn.weatherapi.com/weather/64x64/day/113.png")
-                    WeatherStatItem("Humidity", "${data.current.humidity}%", "https://cdn.weatherapi.com/weather/64x64/day/113.png")
-                    WeatherStatItem("Chance of rain", "${data.forecast?.forecastday?.get(0)?.day?.daily_chance_of_rain ?: 0}%", "https://cdn.weatherapi.com/weather/64x64/day/113.png")
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Lista godzinowa
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            data.forecast?.forecastday?.get(0)?.hour?.let { hours ->
-                items(hours) { hour ->
-                    HourlyItem(hour)
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = weatherIconUrl(current?.condition?.icon),
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp)
+                        )
+                        Text(
+                            current?.temperatureC.weatherValue("°C"),
+                            style = MaterialTheme.typography.displayMedium
+                        )
+                    }
+                    current?.condition?.text?.let { Text(it) }
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        WeatherStatItem("Wind", current?.windKph.weatherValue(" km/h"), Modifier.weight(1f))
+                        WeatherStatItem("Humidity", current?.humidity.percentage(), Modifier.weight(1f))
+                        WeatherStatItem("Rain chance", forecast?.day?.rainChance.percentage(), Modifier.weight(1f))
+                    }
                 }
             }
+        }
+        item { Text("Hourly forecast", style = MaterialTheme.typography.titleMedium) }
+        if (hours.isEmpty()) {
+            item { Text("Hourly forecast is unavailable for this location.") }
+        } else {
+            item { Text("Time · temperature · feels like", style = MaterialTheme.typography.bodySmall) }
+            items(hours) { hour -> HourlyItem(hour) }
         }
     }
 }
 
 @Composable
-fun WeatherStatItem(label: String, value: String, icon: String) {
-    Card(
-        modifier = Modifier.width(100.dp),
-        shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            AsyncImage(model = icon, contentDescription = null, modifier = Modifier.size(30.dp))
-            Text(text = label, fontSize = 10.sp, color = Color.Gray)
-            Text(text = value, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        }
+private fun WeatherStatItem(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(label, style = MaterialTheme.typography.labelSmall)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
-fun HourlyItem(hour: com.example.weatherapp.api.Hour) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
+private fun HourlyItem(hour: Hour) {
+    Card(Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = hour.time.split(" ")[1], modifier = Modifier.weight(1f))
-            Text(text = "${hour.temp_c}°C", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text(text = "${hour.feelslike_c}°C", color = Color.Gray, modifier = Modifier.weight(1f))
-            AsyncImage(model = "https:${hour.condition.icon}", contentDescription = null, modifier = Modifier.size(30.dp))
+            Text(hourlyTime(hour.time), Modifier.weight(1f))
+            Text(hour.temperatureC.weatherValue("°C"), Modifier.weight(1f))
+            Text(hour.feelsLikeC.weatherValue("°C"), Modifier.weight(1f))
+            AsyncImage(
+                model = weatherIconUrl(hour.condition?.icon),
+                contentDescription = hour.condition?.text,
+                modifier = Modifier.size(30.dp)
+            )
         }
     }
 }
-
