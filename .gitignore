@@ -7,6 +7,7 @@ Thumbs.db
 
 # Secrets / local config
 .env
+.env.*
 local.properties
 
 # Dependencies
@@ -23,6 +24,11 @@ bin/
 obj/
 target/
 .gradle/
+.kotlin/
+*.apk
+*.aab
+*.jks
+*.keystore
 
 # Logs
 *.log

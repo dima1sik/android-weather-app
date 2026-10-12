@@ -4,14 +4,11 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
-    private const val baseUrl = "https://api.weatherapi.com"
-
-    private fun getInstance() : Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
+    val weatherApi: WeatherApi by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://api.weatherapi.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+            .create(WeatherApi::class.java)
     }
-
-    val weatherApi : WeatherApi = getInstance().create(WeatherApi::class.java)
 }
